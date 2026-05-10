@@ -193,7 +193,7 @@ keyword = st.text_input("KEYWORD SEARCH", placeholder="e.g. space, love, zombie,
 
 col3, col4 = st.columns(2)
 with col3:
-    num_movies = st.slider("NUMBER OF MOVIES", 5, 20, 10)
+    num_movies = st.slider("NUMBER OF MOVIES", 5, 100, 10)
 with col4:
     min_rating = st.slider("MINIMUM RATING (out of 10)", 0.0, 10.0, 6.0, 0.5)
 
@@ -215,7 +215,7 @@ def fetch_movies(genre, language, keyword, num_movies, min_rating, sort_by):
         all_movies = []
         page = 1
         total_pages = 999
-        max_pages = (num_movies // 20) + 5
+        max_pages = (num_movies // 20) + 10
 
         while len(all_movies) < num_movies and page <= min(max_pages, total_pages):
             if keyword:
@@ -251,7 +251,7 @@ def fetch_movies(genre, language, keyword, num_movies, min_rating, sort_by):
             except Exception:
                 break
 
-        return all_movies[:num_movies]
+        return all_movies[:num_movies] if all_movies else []
 
 if st.button("FIND MOVIES NOW"):
     with st.spinner("Loading movies..."):
