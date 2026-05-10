@@ -258,7 +258,7 @@ if st.button("🎬 FIND MOVIES NOW"):
                     with cols[i % 3]:
                         poster = movie.get("poster_path")
                         if poster:
-                            st.image(IMG_LARGE + poster, use_container_width=True)
+                            st.image(IMG_LARGE + poster, use_container_width="stretch")
                         else:
                             st.markdown("🎬 No Poster Available")
                         title = movie.get("title", "Unknown")
