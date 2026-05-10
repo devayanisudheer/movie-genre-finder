@@ -10,25 +10,25 @@ API_KEY = "93e0a61ac13c1a2a4136a9e22f3d6ac3"
 IMG_LARGE = "https://image.tmdb.org/t/p/w500"
 
 GENRES = {
-    "🔥 Action": 28, "🌍 Adventure": 12, "🎨 Animation": 16, "😂 Comedy": 35,
-    "🔪 Crime": 80, "🎥 Documentary": 99, "🎭 Drama": 18, "🧙 Fantasy": 14,
-    "👻 Horror": 27, "🔍 Mystery": 9648, "💕 Romance": 10749, "🚀 Sci-Fi": 878,
-    "😱 Thriller": 53, "⚔️ War": 10752, "🤠 Western": 37, "👨‍👩‍👧 Family": 10751,
-    "📜 History": 36, "🎵 Music": 10402, "🦸 Superhero": 28
+    "Action": 28, "Adventure": 12, "Animation": 16, "Comedy": 35,
+    "Crime": 80, "Documentary": 99, "Drama": 18, "Fantasy": 14,
+    "Horror": 27, "Mystery": 9648, "Romance": 10749, "Sci-Fi": 878,
+    "Thriller": 53, "War": 10752, "Western": 37, "Family": 10751,
+    "History": 36, "Music": 10402
 }
 
 LANGUAGES = {
-    "🇺🇸 English": "en", "🇰🇷 Korean": "ko", "🇮🇳 Tamil": "ta",
-    "🇮🇳 Malayalam": "ml", "🇮🇳 Hindi": "hi", "🇯🇵 Japanese": "ja",
-    "🇫🇷 French": "fr", "🇪🇸 Spanish": "es", "🇮🇹 Italian": "it",
-    "🇨🇳 Chinese": "zh", "🇸🇦 Arabic": "ar", "🇧🇷 Portuguese": "pt"
+    "English": "en", "Korean": "ko", "Tamil": "ta",
+    "Malayalam": "ml", "Hindi": "hi", "Japanese": "ja",
+    "French": "fr", "Spanish": "es", "Italian": "it",
+    "Chinese": "zh", "Arabic": "ar", "Portuguese": "pt"
 }
 
 sort_map = {
-    "🔥 Popularity": "popularity.desc",
-    "⭐ Highest Rated": "vote_average.desc",
-    "📅 Newest First": "primary_release_date.desc",
-    "🗳️ Most Voted": "vote_count.desc"
+    "Popularity": "popularity.desc",
+    "Highest Rated": "vote_average.desc",
+    "Newest First": "primary_release_date.desc",
+    "Most Voted": "vote_count.desc"
 }
 
 st.markdown("""
@@ -176,8 +176,8 @@ st.markdown("""
 
 st.markdown("""
 <div class='hero-banner'>
-    <div class='main-title'>🎬 MOVIE FINDER</div>
-    <div class='subtitle'>✦ Discover Movies From Around The World ✦</div>
+    <div class='main-title'>MOVIE FINDER</div>
+    <div class='subtitle'>Discover Movies From Around The World</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -185,19 +185,19 @@ st.markdown("<div class='section-title'>SEARCH MOVIES</div>", unsafe_allow_html=
 
 col1, col2 = st.columns(2)
 with col1:
-    genre = st.selectbox("🎭 GENRE", list(GENRES.keys()))
+    genre = st.selectbox("GENRE", list(GENRES.keys()))
 with col2:
-    language = st.selectbox("🌍 LANGUAGE", list(LANGUAGES.keys()))
+    language = st.selectbox("LANGUAGE", list(LANGUAGES.keys()))
 
-keyword = st.text_input("🔍 KEYWORD SEARCH", placeholder="e.g. space, love, zombie, dragon...")
+keyword = st.text_input("KEYWORD SEARCH", placeholder="e.g. space, love, zombie, dragon...")
 
 col3, col4 = st.columns(2)
 with col3:
-    num_movies = st.slider("🎞️ NUMBER OF MOVIES", 5, 20, 10)
+    num_movies = st.slider("NUMBER OF MOVIES", 5, 20, 10)
 with col4:
-    min_rating = st.slider("⭐ MINIMUM RATING (out of 10)", 0.0, 10.0, 6.0, 0.5)
+    min_rating = st.slider("MINIMUM RATING (out of 10)", 0.0, 10.0, 6.0, 0.5)
 
-sort_by = st.selectbox("📊 SORT BY", list(sort_map.keys()))
+sort_by = st.selectbox("SORT BY", list(sort_map.keys()))
 
 def get_rating_badge(rating):
     if rating >= 8:
@@ -214,7 +214,10 @@ def fetch_movies(genre, language, keyword, num_movies, min_rating, sort_by):
     with httpx.Client(verify=False, follow_redirects=True, transport=transport) as client:
         all_movies = []
         page = 1
-        while len(all_movies) < num_movies and page <= 5:
+        total_pages = 999
+        max_pages = (num_movies // 20) + 5
+
+        while len(all_movies) < num_movies and page <= min(max_pages, total_pages):
             if keyword:
                 url = "https://api.themoviedb.org/3/search/movie"
                 params = {
@@ -231,23 +234,27 @@ def fetch_movies(genre, language, keyword, num_movies, min_rating, sort_by):
                     "with_original_language": LANGUAGES[language],
                     "sort_by": sort_map[sort_by],
                     "vote_average.gte": min_rating,
-                    "vote_count.gte": 50,
                     "page": page
                 }
             try:
                 response = client.get(url, params=params, timeout=30)
-                results = response.json().get("results", [])
+                data = response.json()
+                total_pages = data.get("total_pages", 1)
+                results = data.get("results", [])
                 if not results:
                     break
-                filtered = [m for m in results if m.get("vote_average", 0) >= min_rating]
-                all_movies.extend(filtered)
+                # For keyword search, apply client-side rating filter
+                if keyword:
+                    results = [m for m in results if m.get("vote_average", 0) >= min_rating]
+                all_movies.extend(results)
                 page += 1
             except Exception:
                 break
+
         return all_movies[:num_movies]
 
-if st.button("🎬 FIND MOVIES NOW"):
-    with st.spinner("🎬 Loading movies..."):
+if st.button("FIND MOVIES NOW"):
+    with st.spinner("Loading movies..."):
         try:
             movies = fetch_movies(genre, language, keyword, num_movies, min_rating, sort_by)
             if movies:
@@ -258,7 +265,7 @@ if st.button("🎬 FIND MOVIES NOW"):
                     with cols[i % 3]:
                         poster = movie.get("poster_path")
                         if poster:
-                            st.image(IMG_LARGE + poster, use_container_width="stretch")
+                            st.image(IMG_LARGE + poster, use_container_width=True)
                         else:
                             st.markdown("🎬 No Poster Available")
                         title = movie.get("title", "Unknown")
